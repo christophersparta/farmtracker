@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}FarmTracker{% endblock %}</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<style>
+:root{--ft:#3B6D11;--ft-light:#EAF3DE;}
+body{background:#f4f6f4;font-size:14px;}
+#sidebar{width:220px;min-height:100vh;background:#fff;border-right:1px solid #e5e7eb;position:fixed;top:0;left:0;z-index:100;display:flex;flex-direction:column;}
+.brand{padding:16px 20px;border-bottom:1px solid #e5e7eb;font-weight:600;color:var(--ft);font-size:15px;display:flex;align-items:center;gap:8px;}
+.brand-icon{width:28px;height:28px;background:var(--ft);border-radius:6px;display:flex;align-items:center;justify-content:center;}
+.nav-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#9ca3af;padding:10px 20px 4px;}
+.nav-link{padding:7px 20px;color:#6b7280;border-left:2px solid transparent;border-radius:0;display:flex;align-items:center;gap:8px;font-size:13px;}
+.nav-link:hover{color:var(--ft);background:var(--ft-light);}
+.nav-link.active{color:var(--ft);background:var(--ft-light);border-left-color:var(--ft);font-weight:500;}
+#main{margin-left:220px;}
+.topbar{background:#fff;border-bottom:1px solid #e5e7eb;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:99;}
+.kpi-card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px;}
+.kpi-accent{height:4px;width:32px;border-radius:2px;margin-bottom:8px;}
+.badge-paid{background:#EAF3DE;color:#3B6D11;}
+.badge-pending{background:#FAEEDA;color:#854F0B;}
+.badge-invoiced{background:#E6F1FB;color:#185FA5;}
+@media(max-width:768px){.sidebar-hide{display:none;}.main-full{margin-left:0;}}
+</style>
+{% block head %}{% endblock %}
+</head>
+<body>
+{% if current_user %}
+<nav id="sidebar">
+  <div class="brand">
+    <div class="brand-icon"><i class="bi bi-flower2 text-white"></i></div>FarmTracker
+  </div>
+  <div class="nav-lbl">Main</div>
+  <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint=='dashboard' %}active{% endif %}"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
+  <a href="{{ url_for('crops_list') }}" class="nav-link {% if 'crop' in request.endpoint %}active{% endif %}"><i class="bi bi-flower3"></i> Crops</a>
+  <a href="{{ url_for('fields_list') }}" class="nav-link {% if 'field' in request.endpoint %}active{% endif %}"><i class="bi bi-geo-alt-fill"></i> Fields</a>
+  <a href="{{ url_for('inventory_list') }}" class="nav-link {% if 'inventory' in request.endpoint %}active{% endif %}"><i class="bi bi-boxes"></i> Inventory</a>
+  <div class="nav-lbl">Operations</div>
+  <a href="{{ url_for('harvests_list') }}" class="nav-link {% if 'harvest' in request.endpoint %}active{% endif %}"><i class="bi bi-basket3-fill"></i> Harvests</a>
+  <a href="{{ url_for('sales_list') }}" class="nav-link {% if 'sale' in request.endpoint %}active{% endif %}"><i class="bi bi-receipt"></i> Sales</a>
+  <a href="{{ url_for('tasks_list') }}" class="nav-link {% if 'task' in request.endpoint %}active{% endif %}"><i class="bi bi-check2-square"></i> Tasks</a>
+  <a href="{{ url_for('beehives_list') }}" class="nav-link {% if 'beehive' in request.endpoint %}active{% endif %}"><i class="bi bi-hexagon-fill"></i> Beehives</a>
+  <div class="nav-lbl">Finance</div>
+  <a href="{{ url_for('reports_index') }}" class="nav-link {% if 'report' in request.endpoint %}active{% endif %}"><i class="bi bi-bar-chart-fill"></i> Reports</a>
+  {% if current_user.role == 'admin' %}
+  <a href="{{ url_for('users_list') }}" class="nav-link {% if 'user' in request.endpoint %}active{% endif %}"><i class="bi bi-people-fill"></i> Users</a>
+  {% endif %}
+  <div class="mt-auto border-top p-3">
+    <div class="small fw-medium">{{ current_user.name }}</div>
+    <span class="badge bg-secondary">{{ current_user.role }}</span>
+    <a href="{{ url_for('auth_logout') }}" class="d-block mt-2 text-danger small"><i class="bi bi-box-arrow-left"></i> Logout</a>
+  </div>
+</nav>
+<div id="main">
+  <div class="topbar">
+    <small class="text-muted">{% block breadcrumb %}Home{% endblock %}</small>
+    <span class="badge" style="background:var(--ft-light);color:var(--ft);">{{ current_user.role|capitalize }} — {{ current_user.name }}</span>
+  </div>
+  <div class="p-4">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}
+        <div class="alert alert-{{ 'success' if cat=='success' else 'warning' if cat=='warning' else 'danger' if cat=='danger' else 'info' }} alert-dismissible fade show">
+          {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </div>
+</div>
+{% else %}
+{% block auth_content %}{% endblock %}
+{% endif %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

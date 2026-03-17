@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block auth_content %}
+<div class="min-vh-100 d-flex align-items-center justify-content-center" style="background:#f4f6f4;">
+  <div class="card shadow-sm" style="width:380px;border-radius:12px;border:1px solid #e5e7eb;">
+    <div class="card-body p-4">
+      <div class="text-center mb-4">
+        <div class="d-inline-flex align-items-center justify-content-center rounded-2 mb-3" style="width:48px;height:48px;background:#3B6D11;">
+          <i class="bi bi-flower2 text-white fs-4"></i>
+        </div>
+        <h4 class="fw-semibold mb-0">FarmTracker</h4>
+        <small class="text-muted">Chikwawa Farm Management System</small>
+      </div>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for cat, msg in messages %}
+          <div class="alert alert-{{ 'danger' if cat=='danger' else 'warning' }}">{{ msg }}</div>
+        {% endfor %}
+      {% endwith %}
+      <form method="POST" action="{{ url_for('auth_login') }}">
+        <div class="mb-3">
+          <label class="form-label fw-medium">Email</label>
+          <input type="email" name="email" class="form-control" placeholder="admin@farm.mw" required autofocus>
+        </div>
+        <div class="mb-4">
+          <label class="form-label fw-medium">Password</label>
+          <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn w-100 fw-medium text-white" style="background:#3B6D11;">Sign in</button>
+      </form>
+      <p class="text-muted text-center mt-3 small">Demo: admin@farm.mw / password123</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

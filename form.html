@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if crop else 'New' }} Crop — FarmTracker{% endblock %}
+{% block breadcrumb %}<a href="{{ url_for('crops_list') }}">Crops</a> / {{ 'Edit' if crop else 'New' }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm" style="border-radius:10px;">
+      <div class="card-body p-4">
+        <h5 class="fw-semibold mb-4">{{ 'Edit Crop' if crop else 'Add Crop' }}</h5>
+        <form method="POST">
+          {% if not crop %}
+          <div class="mb-3">
+            <label class="form-label">Slug <small class="text-muted">(unique key, e.g. sweet_potato)</small></label>
+            <input type="text" name="slug" class="form-control" required placeholder="sweet_potato">
+          </div>
+          {% endif %}
+          <div class="mb-3">
+            <label class="form-label">Display Name</label>
+            <input type="text" name="display_name" class="form-control" required value="{{ crop.display_name if crop else '' }}">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Category</label>
+            <select name="category" class="form-select">
+              {% for cat in ['tuber','vegetable','apiculture','cereal','fruit','legume','other'] %}
+              <option value="{{ cat }}" {{ 'selected' if crop and crop.category == cat }}>{{ cat|capitalize }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-4">
+            <label class="form-label">Notes</label>
+            <textarea name="notes" class="form-control" rows="2">{{ crop.notes if crop else '' }}</textarea>
+          </div>
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn text-white" style="background:#3B6D11;">Save Crop</button>
+            <a href="{{ url_for('crops_list') }}" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

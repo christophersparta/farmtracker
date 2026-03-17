@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — FarmTracker{% endblock %}
+{% block breadcrumb %}Dashboard{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h4 class="fw-semibold mb-0">Dashboard</h4>
+    <small class="text-muted" id="ft-date"></small>
+  </div>
+  <a href="{{ url_for('harvests_new') }}" class="btn btn-sm text-white" style="background:#3B6D11;"><i class="bi bi-plus-lg me-1"></i>Log Harvest</a>
+</div>
+
+<div class="row g-3 mb-4">
+  {% set tiles = [
+    ("Month Sales",     "MK {:,.0f}".format(kpis.month_sales),        "#3B6D11","bi-cash-stack",           "↑ this month",       "text-success"),
+    ("Today's Income",  "MK {:,.0f}".format(kpis.today_sales),        "#639922","bi-currency-dollar",      "today's sales",      "text-success"),
+    ("Stock Value",     "MK {:,.0f}".format(kpis.stock_value),        "#185FA5","bi-boxes",                "all inventory",      "text-muted"),
+    ("Active Fields",   kpis.active_fields|string,                    "#BA7517","bi-geo-alt-fill",         "planted/growing",    "text-muted"),
+    ("Hives Producing", "{}/{}".format(kpis.producing_hives, kpis.total_hives), "#D85A30","bi-hexagon-fill","bee colonies","text-muted"),
+    ("Low Stock",       kpis.low_stock_count|string,                  "#E24B4A","bi-exclamation-triangle", "need reorder",       "text-danger"),
+  ] %}
+  {% for lbl, val, color, icon, sub, sub_cls in tiles %}
+  <div class="col-6 col-md-4 col-xl-2">
+    <div class="kpi-card h-100">
+      <div class="kpi-accent" style="background:{{ color }};"></div>
+      <div style="font-size:11px;color:#6b7280;margin-bottom:4px;">{{ lbl }}</div>
+      <div style="font-size:20px;font-weight:600;color:{{ color }};line-height:1.1;">{{ val }}</div>
+      <div class="{{ sub_cls }}" style="font-size:11px;margin-top:3px;">{{ sub }}</div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-8">
+    <div class="card border-0 shadow-sm h-100" style="border-radius:10px;">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 class="fw-semibold mb-0">Monthly Yield by Crop (kg)</h6>
+          <a href="{{ url_for('harvests_list') }}" class="small" style="color:#3B6D11;">View all →</a>
+        </div>
+        <div class="d-flex flex-wrap gap-3 mb-2">
+          {% set crop_colors = ['#3B6D11','#D85A30','#BA7517','#185FA5','#3266ad','#639922'] %}
+          {% for crop_name, _ in monthly_yield.values()|first|dictsort if monthly_yield %}
+          <span style="display:flex;align-items:center;gap:4px;font-size:11px;color:#6b7280;">
+            <span style="width:10px;height:10px;border-radius:2px;background:{{ crop_colors[loop.index0 % 6] }};display:inline-block;"></span>
+            {{ crop_name }}
+          </span>
+          {% endfor %}
+        </div>
+        <div style="position:relative;height:220px;"><canvas id="yieldChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card border-0 shadow-sm h-100" style="border-radius:10px;">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 class="fw-semibold mb-0">Sales by Crop</h6>
+          <a href="{{ url_for('sales_list') }}" class="small" style="color:#3B6D11;">View all →</a>
+        </div>
+        <div style="position:relative;height:240px;"><canvas id="salesChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm" style="border-radius:10px;">
+      <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center pt-3 pb-0">
+        <h6 class="fw-semibold mb-0">Recent Sales</h6>
+        <a href="{{ url_for('sales_list') }}" class="small" style="color:#3B6D11;">All →</a>
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          <thead class="table-light"><tr><th>Crop</th><th>Buyer</th><th>Amount</th><th>Status</th></tr></thead>
+          <tbody>
+          {% for s in recent_sales %}
+          <tr>
+            <td>{{ s.crop_name or '—' }}</td>
+            <td class="text-muted">{{ s.buyer or '—' }}</td>
+            <td>MK {{ "{:,.0f}".format(s.total or 0) }}</td>
+            <td>
+              {% if s.payment_status == 'paid' %}<span class="badge badge-paid">Paid</span>
+              {% elif s.payment_status == 'pending' %}<span class="badge badge-pending">Pending</span>
+              {% else %}<span class="badge badge-invoiced">{{ s.payment_status|capitalize }}</span>{% endif %}
+            </td>
+          </tr>
+          {% else %}<tr><td colspan="4" class="text-muted text-center py-3">No sales yet.</td></tr>{% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-3">
+    <div class="card border-0 shadow-sm" style="border-radius:10px;">
+      <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center pt-3 pb-0">
+        <h6 class="fw-semibold mb-0">Upcoming Harvests</h6>
+        <a href="{{ url_for('harvests_list') }}" class="small" style="color:#3B6D11;">All →</a>
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          <thead class="table-light"><tr><th>Field</th><th>Days</th></tr></thead>
+          <tbody>
+          {% for f in upcoming_harvests %}
+          <tr>
+            <td><small>{{ f.name }}<br><span class="text-muted">{{ f.crop_name or '—' }}</span></small></td>
+            <td>{% set d = f.days_to_harvest %}
+              {% if d is not none %}{% if d <= 5 %}<span class="badge bg-danger">{{ d }}d</span>
+              {% elif d <= 10 %}<span class="badge bg-warning text-dark">{{ d }}d</span>
+              {% else %}<span class="badge bg-secondary">{{ d }}d</span>{% endif %}{% endif %}
+            </td>
+          </tr>
+          {% else %}<tr><td colspan="2" class="text-muted text-center py-3">None scheduled.</td></tr>{% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-3">
+    <div class="card border-0 shadow-sm" style="border-radius:10px;">
+      <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center pt-3 pb-0">
+        <h6 class="fw-semibold mb-0">Low Stock</h6>
+        <a href="{{ url_for('inventory_list') }}?low=1" class="small" style="color:#3B6D11;">All →</a>
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          <thead class="table-light"><tr><th>Item</th><th>Qty</th></tr></thead>
+          <tbody>
+          {% for item in low_stock %}
+          <tr>
+            <td><small>{{ item.name }}</small></td>
+            <td><span class="badge bg-danger">{{ item.qty_on_hand }} {{ item.unit }}</span></td>
+          </tr>
+          {% else %}<tr><td colspan="2" class="text-muted text-center py-3">All stocked.</td></tr>{% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.getElementById('ft-date').textContent = new Date().toLocaleDateString('en-GB',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+const yieldData = {{ monthly_yield | tojson }};
+const labels = Object.keys(yieldData);
+const cropColors = ['#3B6D11','#D85A30','#BA7517','#185FA5','#3266ad','#639922'];
+const cropNames = Object.keys(Object.values(yieldData)[0] || {});
+const datasets = cropNames.map((crop, i) => ({
+  label: crop,
+  data: labels.map(m => yieldData[m][crop] || 0),
+  backgroundColor: cropColors[i % 6]
+}));
+new Chart(document.getElementById('yieldChart'), {
+  type: 'bar',
+  data: { labels, datasets },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, ticks: { callback: v => v+'kg' } } }
+  }
+});
+const salesData = {{ sales_by_crop | tojson }};
+new Chart(document.getElementById('salesChart'), {
+  type: 'doughnut',
+  data: {
+    labels: salesData.map(r => r.crop),
+    datasets: [{ data: salesData.map(r => r.total), backgroundColor: cropColors, borderWidth: 2, borderColor: '#fff' }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false, cutout: '60%',
+    plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } }
+  }
+});
+</script>
+{% endblock %}
